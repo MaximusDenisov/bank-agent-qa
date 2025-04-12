@@ -1,4 +1,5 @@
-/.venvf/
 /.venv/
-.idea/
+/.idea/
 /external_project/coffee-autotests/
+/config/demo_env.env
+/config/

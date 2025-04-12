@@ -11,5 +11,16 @@
 3. Можно попробовать добавить в реализацию предоставление даннных аналитики, в качестве доступа к дополнительным данным.
 ```
 
+Чтобы иметь доступ к обращению API GigaChat необходимо иметь в папке bank-agent-qa/config файл demo_env.env, содержащий следующую информацию:
+```
+# Основные настройки GigaChat API
+
+    # Замените на ваш API-ключ
+GIGACHAT_API_CREDENTIALS=
+    # Область доступа API
+GIGACHAT_API_SCOPE=GIGACHAT_API_PERS
+    # Возможные модели: GigaChat, GigaChat-Pro, GigaChat-Max
+GIGACHAT_MODEL_NAME=GigaChat
+```
 
 <img src="plan.png" alt="Logo" width="538"/>
