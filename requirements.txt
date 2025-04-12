@@ -1,0 +1,13 @@
+python-dotenv~=1.1.0
+rapidfuzz  # Быстрый поиск похожих строк для обработки запросов
+
+langgraph  # Построение цепочек взаимодействий между агентами и данными
+langgraph-checkpoint  # Сохранение и восстановление состояния диалога
+langgraph-cli  # CLI для управления агентами и цепочками через командную строку
+langgraph-sdk  # Инструменты для разработки кастомных агентов и цепочек
+
+langchain~=0.3.23
+langchain-gigachat  # Работа с API GigaChat для обработки запросов через LangChain
+langchain_chroma  # Интеграция LangChain с векторными базами данных Chroma
+langchain-community~=0.3.21
+langchain-core~=0.3.51
