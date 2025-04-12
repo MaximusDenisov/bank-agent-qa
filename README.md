@@ -23,4 +23,4 @@ GIGACHAT_API_SCOPE=GIGACHAT_API_PERS
 GIGACHAT_MODEL_NAME=GigaChat
 ```
 
-<img src="plan.png" alt="Logo" width="538"/>
+<img src="plan.png" alt="Logo" width="596"/>
