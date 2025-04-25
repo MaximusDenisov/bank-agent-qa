@@ -11,6 +11,12 @@ def get_external_files_path(subdir: str = "") -> str:
         raise FileNotFoundError(f"Путь не найден: {path}")
     return str(path)
 
+def get_external_cases_csv_files_path() -> str:
+    path = root_dir / "external_cases"
+    if not path.exists():
+        raise FileNotFoundError(f"Путь не найден: {path}")
+    return str(path)
+
 
 def get_output_dir(subdir: str = "") -> str:
     """Возвращает путь к директории для автогенерированных тестов."""

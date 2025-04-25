@@ -1,0 +1,2 @@
+ID,Описание теста,Метод,URL,Тело запроса,Ожидаемый код ответа,Ожидаемое тело ответа
+TC_001,Проверка, что /test_endpoint возвращает Hello World!,GET,https://krbk-hub.ru/test_endpoint,,200,"{ ""str"": ""Hello World!"" }"

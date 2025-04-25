@@ -31,34 +31,60 @@ model = GigaChat(
     max_tokens=6000
 )
 
+# def load_project_and_analysis(project_path: str, analysis_file: str):
+#     # 1. Загружаем все .java файлы Maven-проекта в виде документов
+#     loader = DirectoryLoader(project_path, glob="**/*.java", loader_cls=TextLoader)
+#     docs = loader.load()
+#     # docs – список Document, каждый содержит текст файла и метаданные (например, путь)
+#
+#     # 2. Загружаем файл с аналитикой
+#     analysis_doc = TextLoader(analysis_file).load()[0]  # load() возвращает список из одного элемента
+#
+#     # 3. Опционально: проверяем размер документов и при необходимости разбиваем их
+#     text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
+#     split_docs = []
+#     for doc in docs:
+#         if len(doc.page_content) > 2500:  # пример порога длины текста для разбиения
+#             chunks = text_splitter.split_text(doc.page_content)
+#             for i, chunk in enumerate(chunks):
+#                 # Создаем новый Document для каждого фрагмента, сохраняя название файла в метаданных
+#                 meta = doc.metadata.copy()
+#                 meta["chunk"] = i
+#                 split_docs.append(type(doc)(page_content=chunk, metadata=meta))
+#         else:
+#             split_docs.append(doc)
+#     # Теперь split_docs содержит либо оригинальные документы, либо разбитые на части большие файлы
+#     return split_docs, analysis_doc.page_content
 
-def load_project_and_analysis(project_path: str, analysis_file: str):
-    # 1. Загружаем все .java файлы Maven-проекта в виде документов
-    loader = DirectoryLoader(project_path, glob="**/*.java", loader_cls=TextLoader)
+def load_csv_prompts(csv_directory: str):
+    """
+    Загружает все CSV-файлы из указанной директории как документы.
+    Если содержимое файла слишком большое, разбивает его на части.
+
+    :param csv_directory: Путь к директории с .csv файлами
+    :return: Список документов (Document) с содержимым CSV
+    """
+    # Загружаем все .csv файлы из директории
+    loader = DirectoryLoader(csv_directory, glob="**/*.csv", loader_cls=TextLoader)
     docs = loader.load()
-    # docs – список Document, каждый содержит текст файла и метаданные (например, путь)
 
-    # 2. Загружаем файл с аналитикой
-    analysis_doc = TextLoader(analysis_file).load()[0]  # load() возвращает список из одного элемента
-
-    # 3. Опционально: проверяем размер документов и при необходимости разбиваем их
+    # Создаем разделитель текста (для больших CSV-файлов)
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
     split_docs = []
+
     for doc in docs:
-        if len(doc.page_content) > 2500:  # пример порога длины текста для разбиения
+        if len(doc.page_content) > 2500:
             chunks = text_splitter.split_text(doc.page_content)
             for i, chunk in enumerate(chunks):
-                # Создаем новый Document для каждого фрагмента, сохраняя название файла в метаданных
                 meta = doc.metadata.copy()
                 meta["chunk"] = i
                 split_docs.append(type(doc)(page_content=chunk, metadata=meta))
         else:
             split_docs.append(doc)
-    # Теперь split_docs содержит либо оригинальные документы, либо разбитые на части большие файлы
-    return split_docs, analysis_doc.page_content
 
+    return split_docs
 
-def build_prompt_and_query(split_docs, analysis_text):
+def build_prompt_and_query(split_docs, csv_docs):
     # 1. Составляем системное сообщение с инструкцией
     system_content = system_prompt
     system_message = SystemMessage(content=system_content)
@@ -77,7 +103,13 @@ def build_prompt_and_query(split_docs, analysis_text):
         user_content += f"\n=== Файл: {file_name} ===\n{code_snippet}\n"
     # Добавляем аналитический отчет
     user_content += "\n### Аналитический отчёт и предложения\n"
-    user_content += analysis_text[:3000]  # ограничимся первыми N символами, если файл очень большой
+    for i, csv_doc in enumerate(csv_docs, start=1):
+        file_name = csv_doc.metadata.get("source", f"csv_doc_{i}.csv")
+        user_content += f"\n=== CSV файл: {file_name} ===\n"
+        csv_snippet = csv_doc.page_content
+        if len(csv_snippet) > 1000:
+            csv_snippet = csv_snippet[:1000] + "... [контент усечен]\n"
+        user_content += csv_snippet + "\n"
 
     user_message = HumanMessage(content=user_content)
 
@@ -117,12 +149,15 @@ def save_generated_tests(response_text: str, output_dir: str):
     return saved_files
 
 
-def generate_tests_for_project(project_path: str, analysis_file: str, output_dir: str):
-    # todo: Передавать несколько файлов в виде "Тест кейсов".csv
-    # 1. Загрузка контекста проекта и аналитики
-    docs, analysis_text = load_project_and_analysis(project_path, analysis_file)
+def generate_tests_for_project(project_path: str, csv_directory: str, output_dir: str):
+    # 1. Загрузка исходных файлов проекта (.java) и csv-файлов с аналитикой
+    java_docs = DirectoryLoader(project_path, glob="**/*.java", loader_cls=TextLoader).load()
+    csv_docs = load_csv_prompts(csv_directory)
+    docs = java_docs + csv_docs
+
     # 2. Формирование промпта и запрос к GigaChat
-    response_text = build_prompt_and_query(docs, analysis_text)
+    response_text = build_prompt_and_query(java_docs, csv_docs)
+
     # 3. Сохранение сгенерированных тестов в файлы
     result_files = save_generated_tests(response_text, output_dir)
     print(f"Сгенерировано файлов: {len(result_files)}. Они сохранены в папке: {output_dir}")
